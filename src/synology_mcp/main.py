@@ -321,6 +321,985 @@ async def get_hibernation_settings() -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
+# Users / groups / accounts
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+async def get_users() -> dict[str, Any]:
+    """List DSM local users.
+
+    Returns:
+        User list (name, description, email, admin flag, etc.).
+    """
+    client = await _client()
+    try:
+        return await client.user_list()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_user(name: str) -> dict[str, Any]:
+    """Get details for one DSM user.
+
+    Args:
+        name: username (e.g. "admin", "mcp-server").
+
+    Returns:
+        That user's account details.
+    """
+    client = await _client()
+    try:
+        return await client.user_get(name)
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_groups() -> dict[str, Any]:
+    """List DSM local groups.
+
+    Returns:
+        Group list (name, description, gid, etc.).
+    """
+    client = await _client()
+    try:
+        return await client.group_list()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_group(name: str) -> dict[str, Any]:
+    """Get details for one DSM group.
+
+    Args:
+        name: group name (e.g. "administrators", "users").
+
+    Returns:
+        That group's details.
+    """
+    client = await _client()
+    try:
+        return await client.group_get(name)
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_user_home_settings() -> dict[str, Any]:
+    """Get user home folder settings.
+
+    Returns:
+        Whether user homes are enabled and where they live.
+    """
+    client = await _client()
+    try:
+        return await client.user_home()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_password_policy() -> dict[str, Any]:
+    """Get the DSM password strength policy.
+
+    Returns:
+        Minimum length, complexity rules, expiry, history.
+    """
+    client = await _client()
+    try:
+        return await client.user_password_policy()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_username_policy() -> dict[str, Any]:
+    """Get the DSM username policy.
+
+    Returns:
+        Username constraints (length, allowed characters).
+    """
+    client = await _client()
+    try:
+        return await client.user_username_policy()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_password_expiry() -> dict[str, Any]:
+    """Get per-user password expiry status.
+
+    Returns:
+        Users whose passwords are near/at expiry.
+    """
+    client = await _client()
+    try:
+        return await client.user_password_expiry()
+    finally:
+        await client.aclose()
+
+
+# ---------------------------------------------------------------------------
+# Network / DDNS / iSCSI
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+async def get_network_config() -> dict[str, Any]:
+    """Get the DSM network configuration.
+
+    Returns:
+        Hostname, DNS servers, gateway, proxy, IP addressing.
+    """
+    client = await _client()
+    try:
+        return await client.network()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_network_interface_details() -> dict[str, Any]:
+    """Get detailed per-interface network config.
+
+    Returns:
+        Interface list with IP, netmask, gateway, MTU, type.
+    """
+    client = await _client()
+    try:
+        return await client.network_interfaces()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_ovs_status() -> dict[str, Any]:
+    """Get Open vSwitch (OVS) status.
+
+    Returns:
+        Whether OVS is enabled and its config.
+    """
+    client = await _client()
+    try:
+        return await client.network_ovs()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_ddns_records() -> dict[str, Any]:
+    """List DDNS hostname records.
+
+    Returns:
+        Configured DDNS hostnames and their status.
+    """
+    client = await _client()
+    try:
+        return await client.ddns_records()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_ddns_providers() -> dict[str, Any]:
+    """List supported DDNS providers.
+
+    Returns:
+        Provider names and capabilities.
+    """
+    client = await _client()
+    try:
+        return await client.ddns_providers()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_ddns_external_ip() -> dict[str, Any]:
+    """Get the external IP as seen by DSM's DDNS service.
+
+    Returns:
+        Current external IP address.
+    """
+    client = await _client()
+    try:
+        return await client.ddns_extip()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_iscsi_luns() -> dict[str, Any]:
+    """List iSCSI LUNs.
+
+    Returns:
+        LUN list with name, size, target, status.
+    """
+    client = await _client()
+    try:
+        return await client.iscsi_luns()
+    finally:
+        await client.aclose()
+
+
+# ---------------------------------------------------------------------------
+# Security / connections / TLS
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+async def get_firewall() -> dict[str, Any]:
+    """Get the DSM firewall status.
+
+    Returns:
+        Whether the firewall is enabled and which profile is active.
+    """
+    client = await _client()
+    try:
+        return await client.firewall()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_firewall_profiles() -> dict[str, Any]:
+    """List firewall profiles.
+
+    Returns:
+        Profile list with active status.
+    """
+    client = await _client()
+    try:
+        return await client.firewall_profiles()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_firewall_geoip() -> dict[str, Any]:
+    """List GeoIP firewall rules.
+
+    Returns:
+        Country allow/deny rules.
+    """
+    client = await _client()
+    try:
+        return await client.firewall_geoip()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_autoblock() -> dict[str, Any]:
+    """Get Auto Block (login attempt protection) settings.
+
+    Returns:
+        Enable flag, attempt threshold, block/expiry minutes.
+    """
+    client = await _client()
+    try:
+        return await client.autoblock()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_dsm_proxy() -> dict[str, Any]:
+    """Get DSM reverse-proxy settings.
+
+    Returns:
+        Proxy configuration.
+    """
+    client = await _client()
+    try:
+        return await client.dsm_proxy()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_terminal_status() -> dict[str, Any]:
+    """Get SSH/Telnet (Terminal) service status.
+
+    Returns:
+        Whether SSH and Telnet are enabled, and the SSH port.
+    """
+    client = await _client()
+    try:
+        return await client.terminal()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_smart_block() -> dict[str, Any]:
+    """Get Smart Block (account protection) settings.
+
+    Returns:
+        Enable flag and thresholds.
+    """
+    client = await _client()
+    try:
+        return await client.smartblock()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_smart_block_trusted() -> dict[str, Any]:
+    """List Smart Block trusted IPs/accounts.
+
+    Returns:
+        Trusted allow-list entries.
+    """
+    client = await _client()
+    try:
+        return await client.smartblock_trusted()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_smart_block_untrusted() -> dict[str, Any]:
+    """List Smart Block blocked IPs/accounts.
+
+    Returns:
+        Blocked entries.
+    """
+    client = await _client()
+    try:
+        return await client.smartblock_untrusted()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_current_connections() -> dict[str, Any]:
+    """List current DSM connections.
+
+    Returns:
+        Active connections with source IP, user, and application.
+    """
+    client = await _client()
+    try:
+        return await client.current_connections()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_connections_by_user() -> dict[str, Any]:
+    """List current connections grouped by user.
+
+    Returns:
+        Per-user connection counts and details.
+    """
+    client = await _client()
+    try:
+        return await client.current_connections_by_user()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_tls_profile() -> dict[str, Any]:
+    """Get the DSM TLS security profile.
+
+    Returns:
+        TLS version and cipher-suite settings.
+    """
+    client = await _client()
+    try:
+        return await client.tls_profile()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_web_dsm_settings() -> dict[str, Any]:
+    """Get DSM web portal settings (HTTP/HTTPS ports, redirect).
+
+    Returns:
+        Web service port and HTTPS configuration.
+    """
+    client = await _client()
+    try:
+        return await client.web_dsm()
+    finally:
+        await client.aclose()
+
+
+# ---------------------------------------------------------------------------
+# Services / packages
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+async def get_services() -> dict[str, Any]:
+    """List DSM services and their running/enabled state.
+
+    Returns:
+        Service list (name, running, enabled).
+    """
+    client = await _client()
+    try:
+        return await client.services()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_service_ports() -> dict[str, Any]:
+    """Get the DSM services and their listening ports.
+
+    Returns:
+        Service-to-port mapping.
+    """
+    client = await _client()
+    try:
+        return await client.service_ports()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_package_servers() -> dict[str, Any]:
+    """List configured package sources/repositories.
+
+    Returns:
+        Package server URLs and status.
+    """
+    client = await _client()
+    try:
+        return await client.package_servers()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_package_feeds() -> dict[str, Any]:
+    """List package feeds (beta channel etc.).
+
+    Returns:
+        Feed configuration.
+    """
+    client = await _client()
+    try:
+        return await client.package_feeds()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_package_settings() -> dict[str, Any]:
+    """Get Package Center settings.
+
+    Returns:
+        Auto-update and install-volume settings.
+    """
+    client = await _client()
+    try:
+        return await client.package_setting()
+    finally:
+        await client.aclose()
+
+
+# ---------------------------------------------------------------------------
+# Tasks / upgrade / hardware
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+async def get_scheduled_tasks() -> dict[str, Any]:
+    """List scheduled tasks (Task Scheduler).
+
+    Returns:
+        Scheduled tasks with schedule, enabled state, last run.
+    """
+    client = await _client()
+    try:
+        return await client.task_scheduler_list()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_event_scheduler() -> dict[str, Any]:
+    """List event scheduler rules (power on/off schedule).
+
+    Returns:
+        Event scheduler configuration.
+    """
+    client = await _client()
+    try:
+        return await client.event_scheduler_list()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_upgrade_status() -> dict[str, Any]:
+    """Get DSM update status.
+
+    Returns:
+        Current version and whether an update is available.
+    """
+    client = await _client()
+    try:
+        return await client.upgrade_status()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_upgrade_settings() -> dict[str, Any]:
+    """Get DSM update settings.
+
+    Returns:
+        Auto-update and update-channel configuration.
+    """
+    client = await _client()
+    try:
+        return await client.upgrade_setting()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_autoupgrade_security() -> dict[str, Any]:
+    """Get security auto-update status.
+
+    Returns:
+        Whether critical security patches auto-apply.
+    """
+    client = await _client()
+    try:
+        return await client.autoupgrade_security()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_reboot_required() -> dict[str, Any]:
+    """Check whether DSM needs a reboot.
+
+    Returns:
+        Whether a reboot is pending (e.g. after an update).
+    """
+    client = await _client()
+    try:
+        return await client.need_reboot()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_ups_status() -> dict[str, Any]:
+    """Get UPS status (if a UPS is attached).
+
+    Returns:
+        UPS model, battery charge, load, status.
+    """
+    client = await _client()
+    try:
+        return await client.ups()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_external_usb_devices() -> dict[str, Any]:
+    """List external USB storage devices.
+
+    Returns:
+        USB device list (empty if none attached).
+    """
+    client = await _client()
+    try:
+        return await client.external_usb()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_external_esata_devices() -> dict[str, Any]:
+    """List external eSATA storage devices.
+
+    Returns:
+        eSATA device list (empty if none attached).
+    """
+    client = await _client()
+    try:
+        return await client.external_esata()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_external_storage_settings() -> dict[str, Any]:
+    """Get external storage (eSATA/USB) settings.
+
+    Returns:
+        Eject/enable policy for external drives.
+    """
+    client = await _client()
+    try:
+        return await client.external_storage_setting()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_printers() -> dict[str, Any]:
+    """List connected USB/network printers.
+
+    Returns:
+        Printer list (empty if none attached).
+    """
+    client = await _client()
+    try:
+        return await client.printers()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_power_schedule() -> dict[str, Any]:
+    """Get the power on/off schedule.
+
+    Returns:
+        Scheduled power events.
+    """
+    client = await _client()
+    try:
+        return await client.power_schedule()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_power_recovery() -> dict[str, Any]:
+    """Get power-recovery settings (behavior after power loss).
+
+    Returns:
+        What DSM does when power is restored.
+    """
+    client = await _client()
+    try:
+        return await client.power_recovery()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_beep_control() -> dict[str, Any]:
+    """Get beep-control settings (audible alerts).
+
+    Returns:
+        Beep enable/disable state.
+    """
+    client = await _client()
+    try:
+        return await client.beep_control()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_memory_layout() -> dict[str, Any]:
+    """Get memory module layout.
+
+    Returns:
+        Per-slot memory module info.
+    """
+    client = await _client()
+    try:
+        return await client.memory_layout()
+    finally:
+        await client.aclose()
+
+
+# ---------------------------------------------------------------------------
+# File services (SMB / AFP / NFS / FTP / rsync)
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+async def get_smb_settings() -> dict[str, Any]:
+    """Get SMB/CIFS file-service settings.
+
+    Returns:
+        SMB enable flag, workgroup, version, and options.
+    """
+    client = await _client()
+    try:
+        return await client.fileserv_smb()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_afp_settings() -> dict[str, Any]:
+    """Get AFP (Apple Filing Protocol) settings.
+
+    Returns:
+        AFP enable flag and options.
+    """
+    client = await _client()
+    try:
+        return await client.fileserv_afp()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_nfs_settings() -> dict[str, Any]:
+    """Get NFS file-service settings.
+
+    Returns:
+        NFS enable flag and versions.
+    """
+    client = await _client()
+    try:
+        return await client.fileserv_nfs()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_ftp_settings() -> dict[str, Any]:
+    """Get FTP file-service settings.
+
+    Returns:
+        FTP enable flag, port, and options.
+    """
+    client = await _client()
+    try:
+        return await client.fileserv_ftp()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_rsync_accounts() -> dict[str, Any]:
+    """List rsync backup accounts.
+
+    Returns:
+        rsync account list.
+    """
+    client = await _client()
+    try:
+        return await client.fileserv_rsync_accounts()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_reflink_copy_settings() -> dict[str, Any]:
+    """Get reflink copy (fast-clone) settings.
+
+    Returns:
+        Reflink copy enable state.
+    """
+    client = await _client()
+    try:
+        return await client.fileserv_reflink()
+    finally:
+        await client.aclose()
+
+
+# ---------------------------------------------------------------------------
+# Logs / monitoring / region / misc
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+async def get_log_receive_rules() -> dict[str, Any]:
+    """List Log Center receive rules.
+
+    Returns:
+        Remote log receive configuration.
+    """
+    client = await _client()
+    try:
+        return await client.logcenter_recv_rules()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_resource_monitor_settings() -> dict[str, Any]:
+    """Get Resource Monitor settings.
+
+    Returns:
+        Monitoring thresholds and history settings.
+    """
+    client = await _client()
+    try:
+        return await client.resourcemonitor_setting()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_resource_monitor_rules() -> dict[str, Any]:
+    """List Resource Monitor event rules (alerts).
+
+    Returns:
+        Alert rules with thresholds.
+    """
+    client = await _client()
+    try:
+        return await client.resourcemonitor_event_rules()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_resource_monitor_logs() -> dict[str, Any]:
+    """List Resource Monitor log entries.
+
+    Returns:
+        Recent resource events.
+    """
+    client = await _client()
+    try:
+        return await client.resourcemonitor_logs()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_syslog_logs() -> dict[str, Any]:
+    """List syslog client logs.
+
+    Returns:
+        Syslog log entries.
+    """
+    client = await _client()
+    try:
+        return await client.syslog_logs()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_ntp_settings() -> dict[str, Any]:
+    """Get NTP time-sync settings.
+
+    Returns:
+        NTP server and timezone configuration.
+    """
+    client = await _client()
+    try:
+        return await client.ntp()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_ntp_status() -> dict[str, Any]:
+    """Get NTP sync status.
+
+    Returns:
+        Whether time is synchronized.
+    """
+    client = await _client()
+    try:
+        return await client.ntp_status()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_region_language() -> dict[str, Any]:
+    """Get regional/language settings.
+
+    Returns:
+        Language and locale configuration.
+    """
+    client = await _client()
+    try:
+        return await client.region_language()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_quickconnect_status() -> dict[str, Any]:
+    """Get QuickConnect status.
+
+    Returns:
+        Whether QuickConnect is enabled and its ID.
+    """
+    client = await _client()
+    try:
+        return await client.quickconnect()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_media_indexing_status() -> dict[str, Any]:
+    """Get media indexing status.
+
+    Returns:
+        Whether indexing is running and progress.
+    """
+    client = await _client()
+    try:
+        return await client.media_indexing_status()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_media_indexing_folders() -> dict[str, Any]:
+    """List media indexing folders.
+
+    Returns:
+        Indexed folders and their types.
+    """
+    client = await _client()
+    try:
+        return await client.media_indexing_folders()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_certificates() -> dict[str, Any]:
+    """List TLS certificates installed on DSM.
+
+    Returns:
+        Certificate list with issuer, expiry, and associated services.
+    """
+    client = await _client()
+    try:
+        return await client.certificates()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_snmp_settings() -> dict[str, Any]:
+    """Get SNMP settings.
+
+    Returns:
+        SNMP enable flag and community/config.
+    """
+    client = await _client()
+    try:
+        return await client.snmp()
+    finally:
+        await client.aclose()
+
+
+# ---------------------------------------------------------------------------
 # Write tools (DNS records) — gated behind SYNOLOGY_ALLOW_WRITE
 # ---------------------------------------------------------------------------
 

@@ -282,6 +282,239 @@ class SynologyClient:
             params={"zone_name": zone_name, "domain_name": zone_name},
         )
 
+    # ------------------------------------------------------------------
+    # Users / groups / accounts
+    # ------------------------------------------------------------------
+
+    async def user_list(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.User", "list")
+
+    async def user_get(self, name: str) -> dict[str, Any]:
+        return await self._request("SYNO.Core.User", "get", params={"name": name})
+
+    async def group_list(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.Group", "list")
+
+    async def group_get(self, name: str) -> dict[str, Any]:
+        return await self._request("SYNO.Core.Group", "get", params={"name": name})
+
+    async def user_home(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.User.Home", "get")
+
+    async def user_password_policy(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.User.PasswordPolicy", "get")
+
+    async def user_username_policy(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.User.UsernamePolicy", "list")
+
+    async def user_password_expiry(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.User.PasswordExpiry", "get")
+
+    # ------------------------------------------------------------------
+    # Network / DDNS / iSCSI
+    # ------------------------------------------------------------------
+
+    async def network(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.Network", "get")
+
+    async def network_interfaces(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.Network.Interface", "list")
+
+    async def network_ovs(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.Network.OVS", "get")
+
+    async def ddns_records(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.DDNS.Record", "list")
+
+    async def ddns_providers(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.DDNS.Provider", "list")
+
+    async def ddns_extip(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.DDNS.ExtIP", "list")
+
+    async def iscsi_luns(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.ISCSI.LUN", "list")
+
+    # ------------------------------------------------------------------
+    # Security / connections / TLS
+    # ------------------------------------------------------------------
+
+    async def firewall(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.Security.Firewall", "get")
+
+    async def firewall_profiles(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.Security.Firewall.Profile", "list")
+
+    async def firewall_geoip(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.Security.Firewall.Geoip", "list")
+
+    async def autoblock(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.Security.AutoBlock", "get")
+
+    async def dsm_proxy(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.Security.DSM.Proxy", "get")
+
+    async def terminal(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.Terminal", "get", version="2")
+
+    async def smartblock(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.SmartBlock", "get")
+
+    async def smartblock_trusted(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.SmartBlock.Trusted", "list")
+
+    async def smartblock_untrusted(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.SmartBlock.Untrusted", "list")
+
+    async def current_connections(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.CurrentConnection", "get")
+
+    async def current_connections_by_user(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.CurrentConnection", "list_by_user")
+
+    async def tls_profile(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.Web.Security.TLSProfile", "get")
+
+    async def web_dsm(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.Web.DSM", "get", version="2")
+
+    # ------------------------------------------------------------------
+    # Services / packages
+    # ------------------------------------------------------------------
+
+    async def services(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.Service", "get", version="2")
+
+    async def service_ports(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.Service.PortInfo", "load")
+
+    async def package_servers(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.Package.Server", "list", version="2")
+
+    async def package_feeds(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.Package.Feed", "list")
+
+    async def package_setting(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.Package.Setting", "get")
+
+    # ------------------------------------------------------------------
+    # Tasks / upgrade / hardware
+    # ------------------------------------------------------------------
+
+    async def task_scheduler_list(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.TaskScheduler", "list", version="3")
+
+    async def event_scheduler_list(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.EventScheduler", "list")
+
+    async def upgrade_status(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.Upgrade", "basic_status")
+
+    async def upgrade_setting(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.Upgrade.Setting", "get")
+
+    async def autoupgrade_security(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.Upgrade.AutoUpgrade.Security", "get")
+
+    async def need_reboot(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.Hardware.NeedReboot", "get")
+
+    async def ups(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.ExternalDevice.UPS", "get")
+
+    async def external_usb(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.ExternalDevice.Storage.USB", "list")
+
+    async def external_esata(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.ExternalDevice.Storage.eSATA", "list")
+
+    async def external_storage_setting(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.ExternalDevice.Storage.Setting", "get")
+
+    async def printers(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.ExternalDevice.Printer", "list")
+
+    async def power_schedule(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.Hardware.PowerSchedule", "load")
+
+    async def power_recovery(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.Hardware.PowerRecovery", "get")
+
+    async def beep_control(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.Hardware.BeepControl", "get")
+
+    async def memory_layout(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.Hardware.MemoryLayout", "get")
+
+    # ------------------------------------------------------------------
+    # File services (SMB / AFP / NFS / FTP / rsync)
+    # ------------------------------------------------------------------
+
+    async def fileserv_smb(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.FileServ.SMB", "get")
+
+    async def fileserv_afp(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.FileServ.AFP", "get")
+
+    async def fileserv_nfs(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.FileServ.NFS", "get")
+
+    async def fileserv_ftp(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.FileServ.FTP", "get")
+
+    async def fileserv_rsync_accounts(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.FileServ.Rsync.Account", "list")
+
+    async def fileserv_reflink(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.FileServ.ReflinkCopy", "get")
+
+    # ------------------------------------------------------------------
+    # Logs / monitoring / region / misc
+    # ------------------------------------------------------------------
+
+    async def logcenter_recv_rules(self) -> dict[str, Any]:
+        return await self._request("SYNO.LogCenter.RecvRule", "list")
+
+    async def resourcemonitor_setting(self) -> dict[str, Any]:
+        return await self._request("SYNO.ResourceMonitor.Setting", "get")
+
+    async def resourcemonitor_event_rules(self) -> dict[str, Any]:
+        return await self._request("SYNO.ResourceMonitor.EventRule", "list")
+
+    async def resourcemonitor_logs(self) -> dict[str, Any]:
+        return await self._request("SYNO.ResourceMonitor.Log", "list")
+
+    async def syslog_logs(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.SyslogClient.Log", "list")
+
+    async def ntp(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.Region.NTP", "get", version="3")
+
+    async def ntp_status(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.Region.NTP", "status")
+
+    async def region_language(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.Region.Language", "get")
+
+    async def quickconnect(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.QuickConnect", "get", version="2")
+
+    async def media_indexing_status(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.MediaIndexing", "status")
+
+    async def media_indexing_folders(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.MediaIndexing.IndexFolder", "get")
+
+    async def certificates(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.Certificate.CRT", "list")
+
+    async def snmp(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.SNMP", "get")
+
+    # ------------------------------------------------------------------
+    # DNS zone records (write) — gated upstream in main.py
+    # ------------------------------------------------------------------
+
     async def dns_add_record(
         self,
         zone_name: str,
