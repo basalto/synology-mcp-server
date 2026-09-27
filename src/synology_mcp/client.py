@@ -571,3 +571,76 @@ class SynologyClient:
         return await self._request_sdk(
             "SYNO.DNSServer.Zone.Record", "delete", params={"items": [item]}
         )
+
+    # ------------------------------------------------------------------
+    # Write methods — gated upstream in main.py via SYNOLOGY_ALLOW_WRITE
+    # ------------------------------------------------------------------
+
+    async def group_create(self, name: str, description: str = "") -> dict[str, Any]:
+        """Create a DSM local group (verified live via GET round-trip)."""
+        params: dict[str, Any] = {"name": name}
+        if description:
+            params["description"] = description
+        return await self._request("SYNO.Core.Group", "create", params=params)
+
+    async def group_delete(self, name: str) -> dict[str, Any]:
+        """Delete a DSM local group (verified live via GET round-trip)."""
+        return await self._request("SYNO.Core.Group", "delete", params={"name": name})
+
+    async def terminal_set(
+        self,
+        enable_ssh: bool,
+        ssh_port: int,
+        *,
+        enable_telnet: bool | None = None,
+        forbid_console: bool | None = None,
+    ) -> dict[str, Any]:
+        """Enable/disable SSH and Telnet (SDK wire format — GET style returns 2402).
+
+        Requires ``SYNOLOGY_ALLOW_WRITE`` — mutating the terminal service.
+        """
+        params: dict[str, Any] = {"enable_ssh": enable_ssh, "ssh_port": ssh_port}
+        if enable_telnet is not None:
+            params["enable_telnet"] = enable_telnet
+        if forbid_console is not None:
+            params["forbid_console"] = forbid_console
+        return await self._request_sdk("SYNO.Core.Terminal", "set", version="3", params=params)
+
+    async def service_control(self, service_id: str, action: str) -> dict[str, Any]:
+        """Start/stop/restart a DSM service (verified live via GET).
+
+        Args:
+            service_id: the service's ``service_id`` from ``get_services``
+                (e.g. ``ssh-shell``, ``atalk``).
+            action: ``start`` | ``stop`` | ``restart``.
+        """
+        return await self._request(
+            "SYNO.Core.Service",
+            "control",
+            params={"service": service_id, "control": action},
+        )
+
+    async def task_set_enable(self, task_id: int, enabled: bool) -> dict[str, Any]:
+        """Enable/disable a scheduled task (verified live via GET).
+
+        Args:
+            task_id: the task's ``id`` from ``get_scheduled_tasks``.
+            enabled: whether the task should be enabled.
+        """
+        return await self._request(
+            "SYNO.Core.TaskScheduler",
+            "set_enable",
+            version="2",
+            params={"id": task_id, "enabled": enabled},
+        )
+
+    async def package_control(self, package_id: str, action: str) -> dict[str, Any]:
+        """Start/stop an installed package (param is ``id``, not ``package``).
+
+        Args:
+            package_id: the package's ``id`` from ``get_installed_packages``.
+            action: ``start`` | ``stop``.
+        """
+        if action not in ("start", "stop"):
+            raise SynologyError(f"package_control action must be 'start' or 'stop', got {action!r}")
+        return await self._request("SYNO.Core.Package.Control", action, params={"id": package_id})

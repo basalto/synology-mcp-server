@@ -184,3 +184,60 @@ async def test_dns_write_uses_sdk_wire_format(client, mocker):
     assert body["method"] == "create"
     assert body["rr_owner"] == '"x.stdout.pt."'  # JSON-stringified (with quotes)
     assert body["rr_ttl"] == '"86400"'  # string -> quoted; ints would be bare
+
+
+async def test_group_and_service_writes_use_get(client, mocker):
+    """Group create/delete and service control go through the GET path with
+    the right api/method/params (verified live — GET style works for these)."""
+    client._sid = "abc123"
+    get_mock = mocker.AsyncMock(return_value=_resp({"success": True, "data": {}}))
+    mocker.patch.object(client._client, "get", new=get_mock)
+
+    await client.group_create("g1", "desc")
+    await client.group_delete("g1")
+    await client.service_control("ssh-shell", "restart")
+
+    calls = [c.kwargs["params"] for c in get_mock.await_args_list]
+    assert calls[0]["api"] == "SYNO.Core.Group" and calls[0]["method"] == "create"
+    assert calls[0]["name"] == "g1" and calls[0]["description"] == "desc"
+    assert calls[1]["method"] == "delete" and calls[1]["name"] == "g1"
+    assert calls[2]["api"] == "SYNO.Core.Service" and calls[2]["method"] == "control"
+    assert calls[2]["service"] == "ssh-shell" and calls[2]["control"] == "restart"
+
+
+async def test_terminal_set_uses_sdk_wire_format(client, mocker):
+    """SYNO.Core.Terminal.set must use the SDK POST path (GET returns 2402)."""
+    client._sid = "abc123"
+    post_mock = mocker.AsyncMock(return_value=_resp({"success": True, "data": {}}))
+    mocker.patch.object(client._client, "post", new=post_mock)
+
+    await client.terminal_set(True, 22)
+
+    post_mock.assert_called_once()
+    args, kwargs = post_mock.await_args
+    assert args[0] == "http://192.168.1.93:5000/webapi/entry.cgi/SYNO.Core.Terminal"
+    body = kwargs["data"]
+    assert body["method"] == "set" and body["version"] == "3"
+    assert body["enable_ssh"] == "true" and body["ssh_port"] == "22"
+
+
+async def test_package_control_validates_action(client):
+    client._sid = "abc123"
+    import pytest
+
+    with pytest.raises(Exception) as exc:  # noqa: BLE001
+        await client.package_control("pkg", "bogus")
+    assert "start" in str(exc.value) and "stop" in str(exc.value)
+
+
+async def test_task_set_enable_params(client, mocker):
+    client._sid = "abc123"
+    get_mock = mocker.AsyncMock(return_value=_resp({"success": True, "data": {}}))
+    mocker.patch.object(client._client, "get", new=get_mock)
+
+    await client.task_set_enable(6, False)
+
+    params = get_mock.await_args.kwargs["params"]
+    assert params["api"] == "SYNO.Core.TaskScheduler"
+    assert params["method"] == "set_enable" and params["version"] == "2"
+    assert params["id"] == 6 and params["enabled"] is False

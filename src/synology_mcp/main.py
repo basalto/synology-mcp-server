@@ -1369,6 +1369,141 @@ async def dns_delete_record(zone_name: str, record: dict[str, Any]) -> dict[str,
 
 
 # ---------------------------------------------------------------------------
+# Write tools (system management) — gated behind SYNOLOGY_ALLOW_WRITE
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+async def group_create(name: str, description: str = "") -> dict[str, Any]:
+    """Create a DSM local group (DESTRUCTIVE — requires SYNOLOGY_ALLOW_WRITE=true).
+
+    Args:
+        name: new group name.
+        description: optional group description.
+
+    Returns:
+        Confirmation with the created group name.
+    """
+    _require_write()
+    client = await _client()
+    try:
+        result = await client.group_create(name, description)
+        return {"success": True, "name": name, "response": result}
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def group_delete(name: str) -> dict[str, Any]:
+    """Delete a DSM local group (DESTRUCTIVE — requires SYNOLOGY_ALLOW_WRITE=true).
+
+    Args:
+        name: group name to delete.
+
+    Returns:
+        Confirmation with the deleted group name.
+    """
+    _require_write()
+    client = await _client()
+    try:
+        result = await client.group_delete(name)
+        return {"success": True, "name": name, "response": result}
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def set_terminal(
+    enable_ssh: bool,
+    ssh_port: int = 22,
+    enable_telnet: bool | None = None,
+    forbid_console: bool | None = None,
+) -> dict[str, Any]:
+    """Enable/disable SSH and Telnet (DESTRUCTIVE — requires SYNOLOGY_ALLOW_WRITE=true).
+
+    Args:
+        enable_ssh: whether to enable the SSH service.
+        ssh_port: SSH port (default 22).
+        enable_telnet: optional — whether to enable Telnet.
+        forbid_console: optional — whether to forbid console login.
+
+    Returns:
+        Confirmation of the terminal service state.
+    """
+    _require_write()
+    client = await _client()
+    try:
+        result = await client.terminal_set(
+            enable_ssh, ssh_port, enable_telnet=enable_telnet, forbid_console=forbid_console
+        )
+        return {"success": True, "enable_ssh": enable_ssh, "ssh_port": ssh_port, "response": result}
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def service_control(service_id: str, action: str) -> dict[str, Any]:
+    """Start/stop/restart a DSM service (DESTRUCTIVE — requires SYNOLOGY_ALLOW_WRITE=true).
+
+    Args:
+        service_id: the service's ``service_id`` from get_services (e.g. "ssh-shell").
+        action: one of "start", "stop", "restart".
+
+    Returns:
+        Confirmation of the action applied.
+    """
+    _require_write()
+    if action not in ("start", "stop", "restart"):
+        raise SynologyError(f"action must be start/stop/restart, got {action!r}")
+    client = await _client()
+    try:
+        result = await client.service_control(service_id, action)
+        return {"success": True, "service_id": service_id, "action": action, "response": result}
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def task_set_enable(task_id: int, enabled: bool) -> dict[str, Any]:
+    """Enable/disable a scheduled task (DESTRUCTIVE — requires SYNOLOGY_ALLOW_WRITE=true).
+
+    Args:
+        task_id: the task's ``id`` from get_scheduled_tasks.
+        enabled: whether the task should be enabled.
+
+    Returns:
+        Confirmation of the task's new state.
+    """
+    _require_write()
+    client = await _client()
+    try:
+        result = await client.task_set_enable(task_id, enabled)
+        return {"success": True, "task_id": task_id, "enabled": enabled, "response": result}
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def package_control(package_id: str, action: str) -> dict[str, Any]:
+    """Start/stop an installed package (DESTRUCTIVE — requires SYNOLOGY_ALLOW_WRITE=true).
+
+    Args:
+        package_id: the package's ``id`` from get_installed_packages.
+        action: "start" or "stop".
+
+    Returns:
+        Confirmation of the action applied.
+    """
+    _require_write()
+    client = await _client()
+    try:
+        result = await client.package_control(package_id, action)
+        return {"success": True, "package_id": package_id, "action": action, "response": result}
+    finally:
+        await client.aclose()
+
+
+# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 
