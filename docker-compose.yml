@@ -1,0 +1,24 @@
+services:
+  synology-mcp:
+    image: ghcr.io/basalto/synology-mcp-server:latest
+    networks:
+      - hostnet
+    environment:
+      FASTMCP_TRANSPORT: streamable-http
+      FASTMCP_HOST: 0.0.0.0
+      FASTMCP_PORT: "3101"
+      SYNOLOGY_URL: ${SYNOLOGY_URL:-http://192.168.1.93:5000}
+      SYNOLOGY_USERNAME: ${SYNOLOGY_USERNAME}
+      SYNOLOGY_PASSWORD: ${SYNOLOGY_PASSWORD}
+      SYNOLOGY_AUTH_VERSION: ${SYNOLOGY_AUTH_VERSION:-6}
+      MCP_AUTH_TOKEN: ${MCP_AUTH_TOKEN:-}
+      SYNOLOGY_REQUEST_TIMEOUT: ${SYNOLOGY_REQUEST_TIMEOUT:-15}
+      SYNOLOGY_LOG_LEVEL: ${SYNOLOGY_LOG_LEVEL:-INFO}
+    deploy:
+      restart_policy:
+        condition: any
+
+networks:
+  hostnet:
+    external: true
+    name: host
