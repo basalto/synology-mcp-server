@@ -165,3 +165,22 @@ async def test_storage_tools_call_right_apis(client, mocker):
         "SYNO.Core.Package",
         "SYNO.Core.Network.Ethernet",
     ]
+
+
+async def test_dns_write_uses_sdk_wire_format(client, mocker):
+    """DNSServer write methods must POST to /entry.cgi/{api} with every param
+    value JSON-stringified (the modern SDK's z() serializer) — otherwise the
+    API rejects params with reason:"type"."""
+    client._sid = "abc123"
+    post_mock = mocker.AsyncMock(return_value=_resp({"success": True, "data": {}}))
+    mocker.patch.object(client._client, "post", new=post_mock)
+
+    await client.dns_add_record("stdout.pt", "x.stdout.pt.", "A", "86400", "1.2.3.4")
+
+    post_mock.assert_called_once()
+    args, kwargs = post_mock.await_args
+    assert args[0] == "http://192.168.1.93:5000/webapi/entry.cgi/SYNO.DNSServer.Zone.Record"
+    body = kwargs["data"]
+    assert body["method"] == "create"
+    assert body["rr_owner"] == '"x.stdout.pt."'  # JSON-stringified (with quotes)
+    assert body["rr_ttl"] == '"86400"'  # string -> quoted; ints would be bare

@@ -185,6 +185,211 @@ async def get_dsm_info() -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
+# Read-only expansion: DNS, shares, processes, logs, hardware
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+async def dns_list_zones() -> dict[str, Any]:
+    """List DNS Server zones (forward and reverse) with type and read-only status.
+
+    Returns:
+        Each zone's name, type (forward/reverse), master/slave, enabled, readonly.
+    """
+    client = await _client()
+    try:
+        return await client.dns_zones()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def dns_list_records(zone_name: str) -> dict[str, Any]:
+    """List all records in a DNS zone (A, CNAME, MX, NS, TXT, PTR, etc.).
+
+    Args:
+        zone_name: the zone name from dns_list_zones (e.g. "stdout.pt").
+
+    Returns:
+        ``items``: each record's rr_owner, rr_type, rr_ttl, rr_info, full_record.
+    """
+    client = await _client()
+    try:
+        return await client.dns_records(zone_name)
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def dns_list_views() -> dict[str, Any]:
+    """List DNS Server views.
+
+    Returns:
+        Configured DNS views.
+    """
+    client = await _client()
+    try:
+        return await client.dns_views()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def dns_daemon_status() -> dict[str, Any]:
+    """Get DNS Server daemon status (recursive/tcp clients, memory).
+
+    Returns:
+        Recursive-client count, TCP-client count, memory alert flag.
+    """
+    client = await _client()
+    try:
+        return await client.dns_daemon_status()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_shares() -> dict[str, Any]:
+    """List shared folders.
+
+    Returns:
+        Shared folder list with name, path, and attributes.
+    """
+    client = await _client()
+    try:
+        return await client.shares()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_system_processes() -> dict[str, Any]:
+    """List running system processes.
+
+    Returns:
+        Process list.
+    """
+    client = await _client()
+    try:
+        return await client.system_processes()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_logcenter_logs() -> dict[str, Any]:
+    """List recent Log Center log entries.
+
+    Returns:
+        Log entries with timestamp, level, and message.
+    """
+    client = await _client()
+    try:
+        return await client.logcenter_logs()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_network_bonds() -> dict[str, Any]:
+    """List network bond interfaces.
+
+    Returns:
+        Bond interface configuration.
+    """
+    client = await _client()
+    try:
+        bonds = await client.network_bonds()
+        # DSM returns a bare list; wrap so FastMCP gets a dict.
+        return {"bonds": bonds}
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_hibernation_settings() -> dict[str, Any]:
+    """Get disk hibernation settings and current status.
+
+    Returns:
+        Hibernation enable flags, idle times, and supported devices.
+    """
+    client = await _client()
+    try:
+        return await client.hibernation()
+    finally:
+        await client.aclose()
+
+
+# ---------------------------------------------------------------------------
+# Write tools (DNS records) — gated behind SYNOLOGY_ALLOW_WRITE
+# ---------------------------------------------------------------------------
+
+
+def _require_write() -> None:
+    if not settings.allow_write:
+        raise SynologyError(
+            "Write tools are disabled. Set SYNOLOGY_ALLOW_WRITE=true to enable them."
+        )
+
+
+@mcp.tool()
+async def dns_add_record(
+    zone_name: str, rr_owner: str, rr_type: str, rr_ttl: str, rr_info: str
+) -> dict[str, Any]:
+    """Add a DNS record to a zone (DESTRUCTIVE — requires SYNOLOGY_ALLOW_WRITE=true).
+
+    Args:
+        zone_name: zone name (e.g. "stdout.pt").
+        rr_owner: record owner/name (e.g. "newhost.stdout.pt." — trailing dot).
+        rr_type: record type (A, AAAA, CNAME, MX, NS, TXT, SRV, PTR).
+        rr_ttl: TTL in seconds (string, e.g. "86400").
+        rr_info: record data (e.g. "192.168.1.50" for A records).
+
+    Returns:
+        The API response after creating the record.
+    """
+    _require_write()
+    client = await _client()
+    try:
+        result = await client.dns_add_record(zone_name, rr_owner, rr_type, rr_ttl, rr_info)
+        return {
+            "success": True,
+            "zone_name": zone_name,
+            "rr_owner": rr_owner,
+            "rr_type": rr_type,
+            "response": result,
+        }
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def dns_delete_record(zone_name: str, record: dict[str, Any]) -> dict[str, Any]:
+    """Delete a DNS record (DESTRUCTIVE — requires SYNOLOGY_ALLOW_WRITE=true).
+
+    Args:
+        zone_name: zone name (e.g. "stdout.pt").
+        record: the full record dict from dns_list_records (must include
+            rr_owner, rr_type, rr_ttl, rr_info, full_record).
+
+    Returns:
+        The API response after deleting the record.
+    """
+    _require_write()
+    client = await _client()
+    try:
+        result = await client.dns_delete_record(zone_name, record)
+        return {
+            "success": True,
+            "zone_name": zone_name,
+            "rr_owner": record.get("rr_owner"),
+            "response": result,
+        }
+    finally:
+        await client.aclose()
+
+
+# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 

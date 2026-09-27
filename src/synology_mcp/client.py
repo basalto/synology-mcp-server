@@ -15,6 +15,7 @@ All methods return the parsed ``data`` payload (dict/list). API errors raise
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 import httpx
@@ -147,6 +148,50 @@ class SynologyClient:
             raise SynologyError(f"DSM {api}.{method} failed (error code {code}): {data}")
         return data.get("data")
 
+    async def _request_sdk(
+        self,
+        api: str,
+        method: str,
+        *,
+        params: dict[str, Any] | None = None,
+        version: str = "1",
+        _retry: bool = True,
+    ) -> Any:
+        """Perform a DSM API call using the modern Synology SDK wire format.
+
+        The DSM 7 web UI's ``synowebapi`` SDK POSTs form-encoded to
+        ``/webapi/entry.cgi/{api}`` and JSON-stringifies **every** param value
+        (its ``z()`` serializer). This preserves types (e.g. integer TTLs) that
+        the old GET query-param style flattens to strings. Required for the
+        DNSServer write methods (create/delete) and recommended for anything
+        that rejects a param with ``reason: "type"``.
+        """
+        if not self._sid:
+            await self.authenticate()
+        body: dict[str, Any] = {
+            "api": api,
+            "version": version,
+            "method": method,
+            "_sid": self._sid,
+        }
+        for key, value in (params or {}).items():
+            body[key] = json.dumps(value)
+        resp = await self._client.post(
+            f"{self.base_url}/webapi/entry.cgi/{api}",
+            data=body,
+            headers={"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"},
+        )
+        data = resp.json()
+        if not data.get("success"):
+            code = (data.get("error") or {}).get("code")
+            if code == _ERR_SESSION_EXPIRED and _retry:
+                await self.authenticate()
+                return await self._request_sdk(
+                    api, method, params=params, version=version, _retry=False
+                )
+            raise SynologyError(f"DSM {api}.{method} failed (error code {code}): {data}")
+        return data.get("data")
+
     # ------------------------------------------------------------------
     # System / utilization
     # ------------------------------------------------------------------
@@ -189,3 +234,107 @@ class SynologyClient:
 
     async def packages(self) -> dict[str, Any]:
         return await self._request("SYNO.Core.Package", "list", version="1")
+
+    # ------------------------------------------------------------------
+    # Read-only expansion
+    # ------------------------------------------------------------------
+
+    async def dns_zones(self) -> dict[str, Any]:
+        """List DNS Server zones (forward + reverse)."""
+        return await self._request("SYNO.DNSServer.Zone", "list")
+
+    async def dns_views(self) -> dict[str, Any]:
+        return await self._request("SYNO.DNSServer.View", "list")
+
+    async def dns_daemon_status(self) -> dict[str, Any]:
+        return await self._request("SYNO.DNSServer.DaemonStatus", "get")
+
+    async def shares(self) -> dict[str, Any]:
+        """List shared folders."""
+        return await self._request("SYNO.Core.Share", "list")
+
+    async def system_processes(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.System.Process", "list")
+
+    async def logcenter_logs(self) -> dict[str, Any]:
+        return await self._request("SYNO.LogCenter.Log", "list", version="2")
+
+    async def network_bonds(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.Network.Bond", "list")
+
+    async def hibernation(self) -> dict[str, Any]:
+        return await self._request("SYNO.Core.Hardware.Hibernation", "get")
+
+    # ------------------------------------------------------------------
+    # DNS zone records (read + write)
+    # ------------------------------------------------------------------
+
+    async def dns_records(self, zone_name: str) -> dict[str, Any]:
+        """List all records in a DNS zone.
+
+        ``zone_name`` is the zone's ``zone_name`` field from ``dns_zones``
+        (e.g. ``stdout.pt`` or ``1.168.192.in-addr.arpa``). The record list
+        API requires BOTH ``zone_name`` and ``domain_name`` (same value).
+        """
+        return await self._request(
+            "SYNO.DNSServer.Zone.Record",
+            "list",
+            params={"zone_name": zone_name, "domain_name": zone_name},
+        )
+
+    async def dns_add_record(
+        self,
+        zone_name: str,
+        rr_owner: str,
+        rr_type: str,
+        rr_ttl: str,
+        rr_info: str,
+    ) -> dict[str, Any]:
+        """Add a DNS record to a zone.
+
+        Args:
+            zone_name: zone name (e.g. ``stdout.pt``).
+            rr_owner: record owner/name (e.g. ``docker-1.stdout.pt.`` — note the trailing dot).
+            rr_type: record type (A, AAAA, CNAME, MX, NS, TXT, SRV, PTR).
+            rr_ttl: TTL in seconds (string).
+            rr_info: record data (e.g. ``192.168.1.110`` for A records).
+
+        The create API takes a flat params object (verified from the DSM UI's
+        own JS: CREATE mode sends zone_name/domain_name/rr_owner/rr_ttl/rr_type/rr_info
+        directly, not wrapped in ``items``). Uses the SDK wire format (POST +
+        JSON-stringified values) because the DNSServer API rejects string-typed
+        params with ``reason: "type"``.
+        """
+        return await self._request_sdk(
+            "SYNO.DNSServer.Zone.Record",
+            "create",
+            params={
+                "zone_name": zone_name,
+                "domain_name": zone_name,
+                "rr_owner": rr_owner,
+                "rr_type": rr_type,
+                "rr_ttl": rr_ttl,
+                "rr_info": rr_info,
+            },
+        )
+
+    async def dns_delete_record(self, zone_name: str, record: dict[str, Any]) -> dict[str, Any]:
+        """Delete a DNS record.
+
+        Args:
+            zone_name: zone name (e.g. ``stdout.pt``).
+            record: the full record dict as returned by ``dns_records``
+                (needs ``rr_owner``, ``rr_type``, ``rr_ttl``, ``rr_info``,
+                ``full_record``).
+
+        The delete API takes ``items`` — one entry per record, each carrying
+        zone_name + domain_name + the record's rr_* fields (verified from the
+        DSM UI's own JS).
+        """
+        item = {"zone_name": zone_name, "domain_name": zone_name}
+        for k in ("rr_owner", "rr_type", "rr_ttl", "rr_info", "full_record"):
+            if k in record:
+                item[k] = record[k]
+        return await self._request_sdk(
+            "SYNO.DNSServer.Zone.Record", "delete", params={"items": [item]}
+        )

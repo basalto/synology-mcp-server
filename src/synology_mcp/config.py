@@ -44,6 +44,15 @@ class Settings(BaseSettings):
         validation_alias="MCP_AUTH_TOKEN",
     )
 
+    allow_write: bool = Field(
+        default=False,
+        description=(
+            "Enable destructive/write tools (DNS record create/delete, etc.). "
+            "Defaults to False (read-only). Set SYNOLOGY_ALLOW_WRITE=true to enable."
+        ),
+        validation_alias="SYNOLOGY_ALLOW_WRITE",
+    )
+
     request_timeout: float = Field(
         default=15.0,
         description="HTTP request timeout in seconds",
