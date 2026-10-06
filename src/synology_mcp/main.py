@@ -263,15 +263,18 @@ async def get_shares() -> dict[str, Any]:
 
 
 @mcp.tool()
-async def nfs_privilege_list() -> dict[str, Any]:
-    """List NFS permission rules for shared folders.
+async def nfs_privilege_list(share_name: str) -> dict[str, Any]:
+    """List NFS permission rules for a shared folder.
+
+    Args:
+        share_name: the share whose NFS rules to read.
 
     Returns:
-        Per-share NFS privilege rules (server, privilege, squash, security, async).
+        NFS rule list (client, privilege, root_squash, async, security_flavor, ...).
     """
     client = await _client()
     try:
-        return await client.nfs_privilege_list()
+        return await client.nfs_privilege_load(share_name)
     finally:
         await client.aclose()
 
@@ -1468,8 +1471,8 @@ async def nfs_privilege_set(share_name: str, rules: list[dict[str, Any]]) -> dic
     Args:
         share_name: the share to configure.
         rules: list of rule dicts, e.g.
-            {"server": "192.168.1.0/24", "privilege": "rw", "squash": "all_squash",
-             "security": "sys", "async": True}.
+            {"client": "192.168.1.0/24", "privilege": "rw", "root_squash": False,
+             "async": True, "insecure": False, "crossmnt": False, "security_flavor": "sys"}.
 
     Returns:
         Confirmation with the configured share name.
@@ -1477,7 +1480,7 @@ async def nfs_privilege_set(share_name: str, rules: list[dict[str, Any]]) -> dic
     _require_write()
     client = await _client()
     try:
-        result = await client.nfs_privilege_set(share_name, rules)
+        result = await client.nfs_privilege_save(share_name, rules)
         return {"success": True, "share_name": share_name, "response": result}
     finally:
         await client.aclose()

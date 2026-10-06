@@ -668,23 +668,31 @@ class SynologyClient:
         """Delete a shared folder (and its contents) via SYNO.Core.Share.delete."""
         return await self._request_sdk("SYNO.Core.Share", "delete", params={"name": name})
 
-    async def nfs_privilege_list(self) -> dict[str, Any]:
-        """List NFS share privileges (SYNO.Core.FileServ.NFS.SharePrivilege list)."""
-        return await self._request("SYNO.Core.FileServ.NFS.SharePrivilege", "list")
+    async def nfs_privilege_load(self, share_name: str) -> dict[str, Any]:
+        """Load NFS rules for a shared folder (SYNO.Core.FileServ.NFS.SharePrivilege load)."""
+        return await self._request(
+            "SYNO.Core.FileServ.NFS.SharePrivilege",
+            "load",
+            params={"share_name": share_name},
+        )
 
-    async def nfs_privilege_set(
+    async def nfs_privilege_save(
         self, share_name: str, rules: list[dict[str, Any]]
     ) -> dict[str, Any]:
-        """Set the NFS permission rules for a shared folder.
+        """Save the NFS permission rules for a shared folder.
 
         Args:
             share_name: the share to configure.
-            rules: list of NFS rule dicts, e.g.
-                ``{"server": "192.168.1.0/24", "privilege": "rw",
-                   "squash": "all_squash", "security": "sys", "async": True}``.
+            rules: list of NFS rule dicts with fields ``client``, ``privilege``
+                (``"ro"``/``"rw"``), ``root_squash`` (bool), ``async`` (bool),
+                ``insecure`` (bool), ``crossmnt`` (bool), ``security_flavor``
+                (``"sys"``/``"krb5"``...), e.g.
+                ``{"client": "192.168.1.0/24", "privilege": "rw",
+                  "root_squash": False, "async": True, "insecure": False,
+                  "crossmnt": False, "security_flavor": "sys"}``.
         """
         return await self._request_sdk(
             "SYNO.Core.FileServ.NFS.SharePrivilege",
-            "set",
-            params={"share_name": share_name, "rules": rules},
+            "save",
+            params={"share_name": share_name, "rule": rules},
         )
