@@ -658,15 +658,22 @@ class SynologyClient:
             name: new share name.
             vol_path: volume path (e.g. ``/volume1``).
             description: optional share description.
+
+        Note: the create API takes a ``shareinfo`` JSON object (verified live),
+        not a flat ``vol_path``.
         """
-        params: dict[str, Any] = {"name": name, "vol_path": vol_path}
+        shareinfo: dict[str, Any] = {"name": name, "vol_path": vol_path}
         if description:
-            params["description"] = description
+            shareinfo["description"] = description
+        params: dict[str, Any] = {"name": name, "shareinfo": json.dumps(shareinfo)}
         return await self._request("SYNO.Core.Share", "create", params=params)
 
     async def share_delete(self, name: str) -> dict[str, Any]:
-        """Delete a shared folder (and its contents) via SYNO.Core.Share.delete."""
-        return await self._request("SYNO.Core.Share", "delete", params={"name": name})
+        """Delete a shared folder (and its contents) via SYNO.Core.Share.delete.
+
+        The delete API takes ``name`` as a JSON array of share names (verified live).
+        """
+        return await self._request("SYNO.Core.Share", "delete", params={"name": json.dumps([name])})
 
     async def nfs_privilege_load(self, share_name: str) -> dict[str, Any]:
         """Load NFS rules for a shared folder (SYNO.Core.FileServ.NFS.SharePrivilege load)."""
