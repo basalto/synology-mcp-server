@@ -1471,8 +1471,10 @@ async def nfs_privilege_set(share_name: str, rules: list[dict[str, Any]]) -> dic
     Args:
         share_name: the share to configure.
         rules: list of rule dicts, e.g.
-            {"client": "192.168.1.0/24", "privilege": "rw", "root_squash": False,
-             "async": True, "insecure": False, "crossmnt": False, "security_flavor": "sys"}.
+            {"client": "192.168.1.0/24", "privilege": "rw", "root_squash": "all_admin",
+             "async": True, "insecure": True, "crossmnt": True,
+             "security_flavor": {"sys": True, "kerberos": False, "kerberos_integrity": False,
+                                 "kerberos_privacy": False}}.
 
     Returns:
         Confirmation with the configured share name.

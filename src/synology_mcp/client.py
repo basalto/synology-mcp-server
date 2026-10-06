@@ -662,11 +662,11 @@ class SynologyClient:
         params: dict[str, Any] = {"name": name, "vol_path": vol_path}
         if description:
             params["description"] = description
-        return await self._request_sdk("SYNO.Core.Share", "create", params=params)
+        return await self._request("SYNO.Core.Share", "create", params=params)
 
     async def share_delete(self, name: str) -> dict[str, Any]:
         """Delete a shared folder (and its contents) via SYNO.Core.Share.delete."""
-        return await self._request_sdk("SYNO.Core.Share", "delete", params={"name": name})
+        return await self._request("SYNO.Core.Share", "delete", params={"name": name})
 
     async def nfs_privilege_load(self, share_name: str) -> dict[str, Any]:
         """Load NFS rules for a shared folder (SYNO.Core.FileServ.NFS.SharePrivilege load)."""
@@ -684,12 +684,13 @@ class SynologyClient:
         Args:
             share_name: the share to configure.
             rules: list of NFS rule dicts with fields ``client``, ``privilege``
-                (``"ro"``/``"rw"``), ``root_squash`` (bool), ``async`` (bool),
-                ``insecure`` (bool), ``crossmnt`` (bool), ``security_flavor``
-                (``"sys"``/``"krb5"``...), e.g.
-                ``{"client": "192.168.1.0/24", "privilege": "rw",
-                  "root_squash": False, "async": True, "insecure": False,
-                  "crossmnt": False, "security_flavor": "sys"}``.
+                (``"ro"``/``"rw"``), ``root_squash`` (string, e.g. ``"all_admin"``
+                for "map all users to admin"), ``async`` (bool), ``insecure``
+                (bool), ``crossmnt`` (bool), ``security_flavor`` (dict of bools),
+                e.g. ``{"client": "192.168.1.0/24", "privilege": "rw",
+                "root_squash": "all_admin", "async": True, "insecure": True,
+                "crossmnt": True, "security_flavor": {"sys": True, "kerberos":
+                False, "kerberos_integrity": False, "kerberos_privacy": False}}``.
         """
         return await self._request_sdk(
             "SYNO.Core.FileServ.NFS.SharePrivilege",
