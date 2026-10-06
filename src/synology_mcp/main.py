@@ -263,6 +263,20 @@ async def get_shares() -> dict[str, Any]:
 
 
 @mcp.tool()
+async def nfs_privilege_list() -> dict[str, Any]:
+    """List NFS permission rules for shared folders.
+
+    Returns:
+        Per-share NFS privilege rules (server, privilege, squash, security, async).
+    """
+    client = await _client()
+    try:
+        return await client.nfs_privilege_list()
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
 async def get_system_processes() -> dict[str, Any]:
     """List running system processes.
 
@@ -1408,6 +1422,63 @@ async def group_delete(name: str) -> dict[str, Any]:
     try:
         result = await client.group_delete(name)
         return {"success": True, "name": name, "response": result}
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def share_create(
+    name: str, vol_path: str = "/volume1", description: str = ""
+) -> dict[str, Any]:
+    """Create a shared folder (DESTRUCTIVE — requires SYNOLOGY_ALLOW_WRITE=true).
+
+    Args:
+        name: new share name.
+        vol_path: volume path (e.g. "/volume1").
+        description: optional description.
+
+    Returns:
+        Confirmation with the created share name.
+    """
+    _require_write()
+    client = await _client()
+    try:
+        result = await client.share_create(name, vol_path, description=description)
+        return {"success": True, "name": name, "response": result}
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def share_delete(name: str) -> dict[str, Any]:
+    """Delete a shared folder and its contents (DESTRUCTIVE — requires SYNOLOGY_ALLOW_WRITE=true)."""
+    _require_write()
+    client = await _client()
+    try:
+        result = await client.share_delete(name)
+        return {"success": True, "name": name, "response": result}
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def nfs_privilege_set(share_name: str, rules: list[dict[str, Any]]) -> dict[str, Any]:
+    """Set NFS permission rules for a shared folder (DESTRUCTIVE — requires SYNOLOGY_ALLOW_WRITE=true).
+
+    Args:
+        share_name: the share to configure.
+        rules: list of rule dicts, e.g.
+            {"server": "192.168.1.0/24", "privilege": "rw", "squash": "all_squash",
+             "security": "sys", "async": True}.
+
+    Returns:
+        Confirmation with the configured share name.
+    """
+    _require_write()
+    client = await _client()
+    try:
+        result = await client.nfs_privilege_set(share_name, rules)
+        return {"success": True, "share_name": share_name, "response": result}
     finally:
         await client.aclose()
 

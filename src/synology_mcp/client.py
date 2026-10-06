@@ -644,3 +644,47 @@ class SynologyClient:
         if action not in ("start", "stop"):
             raise SynologyError(f"package_control action must be 'start' or 'stop', got {action!r}")
         return await self._request("SYNO.Core.Package.Control", action, params={"id": package_id})
+
+    # ------------------------------------------------------------------
+    # Shared folders + NFS privileges (write) — gated upstream in main.py
+    # ------------------------------------------------------------------
+
+    async def share_create(
+        self, name: str, vol_path: str = "/volume1", *, description: str = ""
+    ) -> dict[str, Any]:
+        """Create a shared folder on a volume (SYNO.Core.Share.create).
+
+        Args:
+            name: new share name.
+            vol_path: volume path (e.g. ``/volume1``).
+            description: optional share description.
+        """
+        params: dict[str, Any] = {"name": name, "vol_path": vol_path}
+        if description:
+            params["description"] = description
+        return await self._request_sdk("SYNO.Core.Share", "create", params=params)
+
+    async def share_delete(self, name: str) -> dict[str, Any]:
+        """Delete a shared folder (and its contents) via SYNO.Core.Share.delete."""
+        return await self._request_sdk("SYNO.Core.Share", "delete", params={"name": name})
+
+    async def nfs_privilege_list(self) -> dict[str, Any]:
+        """List NFS share privileges (SYNO.Core.FileServ.NFS.SharePrivilege list)."""
+        return await self._request("SYNO.Core.FileServ.NFS.SharePrivilege", "list")
+
+    async def nfs_privilege_set(
+        self, share_name: str, rules: list[dict[str, Any]]
+    ) -> dict[str, Any]:
+        """Set the NFS permission rules for a shared folder.
+
+        Args:
+            share_name: the share to configure.
+            rules: list of NFS rule dicts, e.g.
+                ``{"server": "192.168.1.0/24", "privilege": "rw",
+                   "squash": "all_squash", "security": "sys", "async": True}``.
+        """
+        return await self._request_sdk(
+            "SYNO.Core.FileServ.NFS.SharePrivilege",
+            "set",
+            params={"share_name": share_name, "rules": rules},
+        )
