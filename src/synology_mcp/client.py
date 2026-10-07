@@ -256,8 +256,55 @@ class SynologyClient:
     async def system_processes(self) -> dict[str, Any]:
         return await self._request("SYNO.Core.System.Process", "list")
 
-    async def logcenter_logs(self) -> dict[str, Any]:
-        return await self._request("SYNO.LogCenter.Log", "list", version="2")
+    async def logcenter_logs(
+        self,
+        target: str = "LOCALARCH",
+        *,
+        level: str = "",
+        keyword: str = "",
+        start: int = 0,
+        limit: int = 100,
+        date_from: int = 0,
+        date_to: int = 0,
+    ) -> dict[str, Any]:
+        """List Log Center log entries from a given target DB.
+
+        ``target`` is a DB path: ``LOCALARCH`` = the NAS's own archive, or
+        ``/volume1/Backup/Logs/<host>/SYNOSYSLOGDB_<host>.DB`` for one host's
+        received syslog. Two verified-live traps: the param is ``logtype`` (NOT
+        ``log_type``) and ``target`` must be a DB path (not a hostname) — either
+        mistake silently returns an empty list.
+        """
+        return await self._request(
+            "SYNO.LogCenter.Log",
+            "list",
+            version="2",
+            params={
+                "target": target,
+                "logtype": "all",
+                "level": level,
+                "keyword": keyword,
+                "date_from": date_from,
+                "date_to": date_to,
+                "start": start,
+                "limit": limit,
+            },
+        )
+
+    @staticmethod
+    def logcenter_host_target(host: str) -> str:
+        """The Log Center per-device DB path for one syslog sender."""
+        return f"/volume1/Backup/Logs/{host}/SYNOSYSLOGDB_{host}.DB"
+
+    async def logcenter_history(self) -> dict[str, Any]:
+        """Log Center archive-rotation events (which per-device DB files exist)."""
+        return await self._request("SYNO.LogCenter.History", "list")
+
+    async def filestation_list(self, folder_path: str) -> dict[str, Any]:
+        """List a folder via File Station (needs read access to the share)."""
+        return await self._request(
+            "SYNO.FileStation.List", "list", version="2", params={"folder_path": folder_path}
+        )
 
     async def network_bonds(self) -> dict[str, Any]:
         return await self._request("SYNO.Core.Network.Bond", "list")

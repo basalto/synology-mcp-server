@@ -294,15 +294,78 @@ async def get_system_processes() -> dict[str, Any]:
 
 
 @mcp.tool()
-async def get_logcenter_logs() -> dict[str, Any]:
-    """List recent Log Center log entries.
+async def get_logcenter_logs(
+    level: str = "",
+    keyword: str = "",
+    limit: int = 100,
+    start: int = 0,
+) -> dict[str, Any]:
+    """List the NAS's OWN Log Center entries (target=LOCALARCH).
+
+    Args:
+        level: filter by severity — "err", "warning", "info", or "" (all).
+        keyword: substring filter on the message.
+        limit: max entries to return (default 100).
+        start: pagination offset.
 
     Returns:
-        Log entries with timestamp, level, and message.
+        ``items`` (host, level, time, prog, msg, ...) plus ``total``.
     """
     client = await _client()
     try:
-        return await client.logcenter_logs()
+        return await client.logcenter_logs(level=level, keyword=keyword, limit=limit, start=start)
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def get_received_logs(
+    host: str,
+    level: str = "",
+    keyword: str = "",
+    limit: int = 100,
+    start: int = 0,
+) -> dict[str, Any]:
+    """List one host's RECEIVED syslog from the Log Center.
+
+    Args:
+        host: the syslog sender (e.g. "server1", "k3s-1", "ubuntu-docker");
+            enumerate with list_logcenter_hosts(). Maps to the per-device DB path
+            /volume1/Backup/Logs/<host>/SYNOSYSLOGDB_<host>.DB.
+        level: "err", "warning", "info", or "" (all).
+        keyword: substring filter on the message.
+        limit: max entries (default 100).
+        start: pagination offset.
+
+    Returns:
+        ``items`` (host, ip, fac, prio, llevel, time, prog, msg, ...) plus ``total``.
+    """
+    client = await _client()
+    try:
+        return await client.logcenter_logs(
+            client.logcenter_host_target(host),
+            level=level,
+            keyword=keyword,
+            limit=limit,
+            start=start,
+        )
+    finally:
+        await client.aclose()
+
+
+@mcp.tool()
+async def list_logcenter_hosts() -> dict[str, Any]:
+    """List the hosts/devices currently sending syslog to the Log Center.
+
+    Returns:
+        The per-device folder names under /Backup/Logs (hostnames and IPs).
+    """
+    client = await _client()
+    try:
+        data = await client.filestation_list("/Backup/Logs")
+        files = data.get("files", []) if isinstance(data, dict) else []
+        hosts = [f["name"] for f in files if f.get("isdir")]
+        return {"hosts": sorted(hosts)}
     finally:
         await client.aclose()
 
